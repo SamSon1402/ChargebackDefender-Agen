@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargebackDefender-Agent — Retail Deduction Recovery | Essor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ef4444;
+            --primary-glow: rgba(239, 68, 68, 0.4);
+            --secondary: #f97316;
+            --accent: #22c55e;
+            --warning: #eab308;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg-dark: #020617;
+            --bg-card: #0f172a;
+            --bg-elevated: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --defender-gradient: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #22c55e 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at 0% 100%, rgba(34, 197, 94, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 0%, rgba(239, 68, 68, 0.10) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(249, 115, 22, 0.04) 0%, transparent 70%);
+        }
+
+        .header {
+            background: linear-gradient(180deg, rgba(239, 68, 68, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 46px;
+            height: 46px;
+            background: var(--defender-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            position: relative;
+        }
+
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: var(--defender-gradient);
+            border-radius: 14px;
+            z-index: -1;
+            opacity: 0.5;
+            filter: blur(8px);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--defender-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-subtitle {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 500;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .badge {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .badge.live {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .badge.live::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: livePulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--primary-glow); }
+            50% { opacity: 0.6; box-shadow: 0 0 0 8px transparent; }
+        }
+
+        .main {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+            background: var(--defender-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 1300px) {
+            .workspace { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, transparent 100%);
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-body { padding: 1.25rem; }
+
+        /* Deduction Inbox */
+        .inbox-container {
+            position: relative;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .inbox-stream {
+            min-height: 360px;
+            max-height: 360px;
+            overflow: hidden;
+            padding: 0.5rem;
+        }
+
+        .deduction-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--danger);
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
+            margin-bottom: 0.5rem;
+            display: grid;
+            grid-template-columns: 38px 1fr auto auto;
+            gap: 0.7rem;
+            align-items: center;
+            animation: slideInRight 0.4s ease;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .deduction-card.dispute {
+            border-left-color: var(--secondary);
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.06), var(--bg-card));
+        }
+
+        .deduction-card.win {
+            border-left-color: var(--success);
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.06), var(--bg-card));
+        }
+
+        .deduction-card.accept {
+            border-left-color: var(--text-muted);
+            opacity: 0.85;
+        }
+
+        .retailer-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 800;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .retailer-badge.target {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .retailer-badge.walmart {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .retailer-badge.cvs {
+            background: rgba(220, 38, 38, 0.15);
+            color: #dc2626;
+            border: 1px solid #dc2626;
+        }
+
+        .deduction-info { min-width: 0; }
+
+        .deduction-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .deduction-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .deduction-code {
+            background: var(--bg-elevated);
+            padding: 1px 5px;
+            border-radius: 3px;
+            color: var(--text-secondary);
+        }
+
+        .deduction-amount {
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+            color: var(--danger);
+            text-align: right;
+        }
+
+        .deduction-card.win .deduction-amount {
+            color: var(--success);
+        }
+
+        .verdict-pill {
+            font-size: 0.6rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+        }
+
+        .verdict-pill.parsing {
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-secondary);
+        }
+
+        .verdict-pill.dispute {
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        .verdict-pill.win {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .verdict-pill.accept {
+            background: rgba(100, 116, 139, 0.15);
+            color: var(--text-muted);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            padding: 0.85rem;
+            background: var(--bg-elevated);
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .stat-value.disputed { color: var(--secondary); }
+        .stat-value.recovered { color: var(--success); }
+        .stat-value.winrate { color: var(--accent); }
+        .stat-value.queue { color: var(--primary); }
+
+        .stat-label {
+            font-size: 0.58rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Sora', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .control-btn:hover {
+            border-color: var(--accent);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .control-btn.active {
+            border-color: var(--accent);
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent);
+        }
+
+        .control-btn.danger:hover {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Retailer Breakdown */
+        .retailer-section {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .retailer-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.85rem;
+        }
+
+        .retailer-row {
+            display: grid;
+            grid-template-columns: 90px 1fr auto;
+            gap: 0.7rem;
+            align-items: center;
+            margin-bottom: 0.65rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .retailer-row:last-child { margin-bottom: 0; }
+
+        .retailer-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Sora', sans-serif;
+        }
+
+        .retailer-bar-track {
+            height: 8px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .retailer-bar-disputed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: var(--secondary);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .retailer-bar-recovered {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: var(--success);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .retailer-amount {
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .retailer-amount strong {
+            color: var(--success);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Agent Info */
+        .agent-info {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--defender-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .agent-name {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .agent-version {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .agent-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .agent-stat {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .agent-stat-value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+            color: var(--accent);
+        }
+
+        .agent-stat-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Deduction Code Distribution */
+        .codes-section {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .code-row {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 0.6rem;
+            align-items: center;
+            padding: 0.4rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+        }
+
+        .code-row + .code-row {
+            border-top: 1px solid rgba(51, 65, 85, 0.4);
+        }
+
+        .code-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .code-bar-track {
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .code-bar-fill {
+            height: 100%;
+            background: var(--defender-gradient);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .code-amount {
+            color: var(--text-primary);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Win Rate Meter */
+        .meter-section {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .meter-container {
+            position: relative;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .meter-arc {
+            width: 160px;
+            height: 80px;
+            border: 10px solid var(--bg-dark);
+            border-bottom: none;
+            border-radius: 160px 160px 0 0;
+            position: relative;
+        }
+
+        .meter-fill {
+            position: absolute;
+            inset: -10px;
+            border: 10px solid var(--accent);
+            border-bottom: none;
+            border-radius: 160px 160px 0 0;
+            clip-path: polygon(0 100%, 0 0, 50% 0, 50% 100%);
+            transition: clip-path 0.6s ease;
+        }
+
+        .meter-value {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.9rem;
+            font-weight: 800;
+            font-family: 'Fira Code', monospace;
+            background: var(--defender-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .meter-label {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Dispute Log */
+        .dispute-log {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            display: flex;
+            gap: 0.65rem;
+            padding: 0.7rem;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--secondary);
+            animation: slideIn 0.3s ease;
+        }
+
+        .log-item.win {
+            border-left-color: var(--success);
+        }
+
+        .log-item.accept {
+            border-left-color: var(--text-muted);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(249, 115, 22, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .log-item.win .log-icon {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .log-item.accept .log-icon {
+            background: rgba(100, 116, 139, 0.2);
+        }
+
+        .log-content { flex: 1; min-width: 0; }
+
+        .log-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .log-meta {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .log-amount {
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+            color: var(--secondary);
+            white-space: nowrap;
+        }
+
+        .log-item.win .log-amount { color: var(--success); }
+        .log-item.accept .log-amount { color: var(--text-muted); }
+
+        /* Processing Overlay */
+        .processing-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.97);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .processing-overlay.active { display: flex; }
+
+        .agent-animation {
+            width: 130px;
+            height: 130px;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .agent-ring {
+            position: absolute;
+            inset: 0;
+            border: 3px solid transparent;
+            border-top-color: var(--primary);
+            border-right-color: var(--secondary);
+            border-radius: 50%;
+            animation: agentSpin 1.8s linear infinite;
+        }
+
+        .agent-ring:nth-child(2) {
+            inset: 14px;
+            border-top-color: var(--secondary);
+            border-right-color: var(--accent);
+            animation-direction: reverse;
+            animation-duration: 1.4s;
+        }
+
+        .agent-ring:nth-child(3) {
+            inset: 28px;
+            border-top-color: var(--accent);
+            border-right-color: var(--primary);
+            animation-duration: 1s;
+        }
+
+        .agent-core {
+            position: absolute;
+            inset: 42px;
+            background: var(--defender-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        @keyframes agentSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .processing-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .processing-stage {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .processing-progress {
+            width: 280px;
+            height: 5px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .processing-bar {
+            height: 100%;
+            background: var(--defender-gradient);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.85rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon { font-size: 1.3rem; }
+        .toast-title { font-size: 0.85rem; font-weight: 600; }
+        .toast-message { font-size: 0.7rem; color: var(--text-muted); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div>
+                    <div class="logo-text">ChargebackDefender</div>
+                    <div class="logo-subtitle">Essor • Retail Deduction Recovery Agent</div>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge live">● Defending</span>
+                <span class="badge">Target / Walmart / CVS</span>
+                <span class="badge">EDI 812 Parser</span>
+                <span class="badge">Auto-Dispute</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="hero">
+            <h1>🛡️ Every Deduction Gets a Fair Fight</h1>
+            <p>Parses Target / Walmart / CVS chargebacks, classifies disputable vs valid, and drafts retailer-ready dispute packages</p>
+        </div>
+
+        <div class="workspace">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📥 Live Deduction Inbox</h3>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Fira Code';" id="streamLabel">Idle</span>
+                </div>
+                <div class="card-body">
+                    <div class="inbox-container">
+                        <div class="inbox-stream" id="inboxStream">
+                            <div style="text-align: center; padding: 5rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
+                                Press <strong style="color: var(--accent)">Start</strong> to begin defending against retail chargebacks
+                            </div>
+                        </div>
+                        <div class="stats-bar">
+                            <div class="stat-item">
+                                <div class="stat-value disputed" id="disputedValue">$0</div>
+                                <div class="stat-label">Disputed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value recovered" id="recoveredValue">$0</div>
+                                <div class="stat-label">Recovered</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value winrate" id="winrateValue">—</div>
+                                <div class="stat-label">Win Rate</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value queue" id="queueValue">0</div>
+                                <div class="stat-label">In Queue</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="control-btn" id="startBtn" onclick="toggleDefense()">
+                            <span id="startIcon">▶️</span>
+                            <span id="startText">Start Defense</span>
+                        </button>
+                        <button class="control-btn" onclick="resetDefense()">
+                            🔄 Reset
+                        </button>
+                        <button class="control-btn" onclick="exportDisputes()">
+                            📤 Export Disputes
+                        </button>
+                        <button class="control-btn danger" onclick="injectChargeback()">
+                            🚨 Inject Chargeback
+                        </button>
+                    </div>
+
+                    <div class="retailer-section">
+                        <div class="retailer-header">🏪 Recovery by Retailer</div>
+                        <div class="retailer-row">
+                            <div class="retailer-label">🎯 Target</div>
+                            <div class="retailer-bar-track">
+                                <div class="retailer-bar-disputed" id="bar-target-d" style="width: 0%"></div>
+                                <div class="retailer-bar-recovered" id="bar-target-r" style="width: 0%"></div>
+                            </div>
+                            <div class="retailer-amount" id="amt-target">$0 / <strong>$0</strong></div>
+                        </div>
+                        <div class="retailer-row">
+                            <div class="retailer-label">🛒 Walmart</div>
+                            <div class="retailer-bar-track">
+                                <div class="retailer-bar-disputed" id="bar-walmart-d" style="width: 0%"></div>
+                                <div class="retailer-bar-recovered" id="bar-walmart-r" style="width: 0%"></div>
+                            </div>
+                            <div class="retailer-amount" id="amt-walmart">$0 / <strong>$0</strong></div>
+                        </div>
+                        <div class="retailer-row">
+                            <div class="retailer-label">💊 CVS</div>
+                            <div class="retailer-bar-track">
+                                <div class="retailer-bar-disputed" id="bar-cvs-d" style="width: 0%"></div>
+                                <div class="retailer-bar-recovered" id="bar-cvs-r" style="width: 0%"></div>
+                            </div>
+                            <div class="retailer-amount" id="amt-cvs">$0 / <strong>$0</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🤖 Agent Architecture</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="agent-info">
+                            <div class="agent-header">
+                                <div class="agent-icon">🛡️</div>
+                                <div>
+                                    <div class="agent-name">ChargebackDefender</div>
+                                    <div class="agent-version">v1.2.3 • LangGraph + EDI</div>
+                                </div>
+                            </div>
+                            <div class="agent-stats">
+                                <div class="agent-stat">
+                                    <div class="agent-stat-value">73%</div>
+                                    <div class="agent-stat-label">Avg Win Rate</div>
+                                </div>
+                                <div class="agent-stat">
+                                    <div class="agent-stat-value">12s</div>
+                                    <div class="agent-stat-label">Draft Time</div>
+                                </div>
+                                <div class="agent-stat">
+                                    <div class="agent-stat-value">22</div>
+                                    <div class="agent-stat-label">Code Patterns</div>
+                                </div>
+                                <div class="agent-stat">
+                                    <div class="agent-stat-value">3</div>
+                                    <div class="agent-stat-label">Retailer Portals</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 Deduction Codes (Top 7)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="codes-section" id="codesSection"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🏆 Dispute Win Rate</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="meter-section">
+                            <div class="meter-container">
+                                <div class="meter-arc">
+                                    <div class="meter-fill" id="meterFill"></div>
+                                </div>
+                                <div class="meter-value" id="meterValue">—</div>
+                            </div>
+                            <div class="meter-label">Disputes Won / Submitted</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📋 Dispute Activity</h3>
+                        <span style="font-size: 0.65rem; color: var(--text-muted);" id="logCount">0 events</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="dispute-log" id="disputeLog">
+                            <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1.5rem;">
+                                Start defense to see activity
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="agent-animation">
+            <div class="agent-ring"></div>
+            <div class="agent-ring"></div>
+            <div class="agent-ring"></div>
+            <div class="agent-core">🛡️</div>
+        </div>
+        <div class="processing-text">Spinning up ChargebackDefender...</div>
+        <div class="processing-stage" id="processingStage">Authenticating retailer portals...</div>
+        <div class="processing-progress">
+            <div class="processing-bar" id="processingBar"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span class="toast-icon">✅</span>
+        <div class="toast-content">
+            <div class="toast-title" id="toastTitle">Success!</div>
+            <div class="toast-message" id="toastMessage">Defense started</div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let mainInterval = null;
+        let disputed = 0;
+        let recovered = 0;
+        let submitted = 0;
+        let won = 0;
+        let inQueue = 0;
+        let logEntries = [];
+        let pendingDeductions = []; // {amount, retailer, code, brand, cardEl}
+
+        const retailers = [
+            { id: 'target', name: 'Target', emoji: '🎯', code: 'TGT', disputed: 0, recovered: 0 },
+            { id: 'walmart', name: 'Walmart', emoji: '🛒', code: 'WMT', disputed: 0, recovered: 0 },
+            { id: 'cvs', name: 'CVS', emoji: '💊', code: 'CVS', disputed: 0, recovered: 0 }
+        ];
+
+        const brands = [
+            { name: 'Boka', emoji: '🦷' },
+            { name: 'ZitSticka', emoji: '🧴' },
+            { name: 'Puracy', emoji: '🧼' },
+            { name: 'OTOTO', emoji: '🍴' },
+            { name: 'FreshCap', emoji: '🍄' },
+            { name: 'Iron Flask', emoji: '🥤' },
+            { name: 'NumNum', emoji: '🥄' },
+            { name: 'Key Nutrients', emoji: '💊' },
+            { name: 'Viking Revolution', emoji: '⚔️' }
+        ];
+
+        const deductionCodes = [
+            { code: 'OTIF-MISS', label: 'OTIF Miss', desc: 'On-time in-full violation', range: [320, 4200], disputable: 0.65, count: 0 },
+            { code: 'SHORTAGE', label: 'Shortage', desc: 'Shipment short of PO qty', range: [180, 2800], disputable: 0.78, count: 0 },
+            { code: 'NO-ASN', label: 'ASN Missing', desc: 'ASN not transmitted in time', range: [240, 1600], disputable: 0.82, count: 0 },
+            { code: 'COMPLIANCE', label: 'Label Compliance', desc: 'Wrong/missing GS1 label', range: [80, 950], disputable: 0.55, count: 0 },
+            { code: 'PRICE-DIFF', label: 'Price Difference', desc: 'Invoice vs PO price mismatch', range: [120, 2400], disputable: 0.88, count: 0 },
+            { code: 'DAMAGE-CLM', label: 'Damage Claim', desc: 'Reported damage on receipt', range: [60, 780], disputable: 0.42, count: 0 },
+            { code: 'POST-AUDIT', label: 'Post-Audit', desc: 'Retailer audit reclaim', range: [400, 6800], disputable: 0.71, count: 0 }
+        ];
+
+        function init() {
+            renderCodes();
+        }
+
+        function renderCodes() {
+            const container = document.getElementById('codesSection');
+            const max = Math.max(...deductionCodes.map(c => c.count), 1);
+            container.innerHTML = deductionCodes.map(c => `
+                <div class="code-row">
+                    <div class="code-label">${c.code}</div>
+                    <div class="code-bar-track"><div class="code-bar-fill" style="width: ${(c.count / max) * 100}%"></div></div>
+                    <div class="code-amount">${c.count}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleDefense() {
+            if (!isRunning) startDefense();
+            else stopDefense();
+        }
+
+        function startDefense() {
+            const overlay = document.getElementById('processingOverlay');
+            const bar = document.getElementById('processingBar');
+            const stage = document.getElementById('processingStage');
+
+            overlay.classList.add('active');
+
+            const stages = [
+                'Authenticating retailer portals...',
+                'Connecting Target Vendor Hub...',
+                'Connecting Walmart Retail Link...',
+                'Connecting CVS pharmaSUPPLIER...',
+                'Loading EDI 812 deduction parser...',
+                'Loading 22 deduction code patterns...',
+                'Warming up dispute drafter LLM...',
+                'Engaging defense pipeline...'
+            ];
+
+            let progress = 0;
+            let stageIndex = 0;
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 16 + 6;
+                if (progress > 100) progress = 100;
+                bar.style.width = progress + '%';
+
+                const newStage = Math.floor((progress / 100) * stages.length);
+                if (newStage !== stageIndex && newStage < stages.length) {
+                    stageIndex = newStage;
+                    stage.textContent = stages[stageIndex];
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        overlay.classList.remove('active');
+                        beginDefense();
+                    }, 300);
+                }
+            }, 90);
+        }
+
+        function beginDefense() {
+            isRunning = true;
+            document.getElementById('startIcon').textContent = '⏸️';
+            document.getElementById('startText').textContent = 'Pause Defense';
+            document.getElementById('startBtn').classList.add('active');
+            document.getElementById('inboxStream').innerHTML = '';
+            document.getElementById('disputeLog').innerHTML = '';
+            document.getElementById('streamLabel').textContent = 'Live • monitoring portals';
+            document.getElementById('streamLabel').style.color = 'var(--accent)';
+
+            mainInterval = setInterval(() => {
+                tick();
+            }, 700);
+
+            showToast('🛡️ Defense Active', 'Monitoring 3 retailer portals');
+        }
+
+        function stopDefense() {
+            isRunning = false;
+            document.getElementById('startIcon').textContent = '▶️';
+            document.getElementById('startText').textContent = 'Resume Defense';
+            document.getElementById('startBtn').classList.remove('active');
+            document.getElementById('streamLabel').textContent = 'Paused';
+            document.getElementById('streamLabel').style.color = 'var(--text-muted)';
+            if (mainInterval) clearInterval(mainInterval);
+            showToast('⏸️ Paused', 'Defense suspended');
+        }
+
+        function tick() {
+            // 70% chance of new deduction arrival
+            if (Math.random() > 0.3) {
+                addDeduction();
+            }
+
+            // Process pending deductions (parsing → verdict)
+            pendingDeductions.forEach((d, i) => {
+                d.age = (d.age || 0) + 1;
+                if (d.age === 2 && d.cardEl && d.cardEl.parentNode) {
+                    // Apply verdict
+                    const code = deductionCodes.find(c => c.code === d.code);
+                    const isDisputable = Math.random() < code.disputable;
+
+                    const verdictPill = d.cardEl.querySelector('.verdict-pill');
+
+                    if (isDisputable) {
+                        d.cardEl.classList.add('dispute');
+                        verdictPill.className = 'verdict-pill dispute';
+                        verdictPill.textContent = 'Dispute Drafted';
+                        disputed += d.amount;
+                        submitted++;
+                        const r = retailers.find(rt => rt.id === d.retailer);
+                        r.disputed += d.amount;
+                        addLogEntry(d, 'dispute');
+                        d.disputeApplied = true;
+
+                        // Schedule win/loss outcome
+                        setTimeout(() => {
+                            if (Math.random() < 0.73) {
+                                // WIN
+                                if (d.cardEl && d.cardEl.parentNode) {
+                                    d.cardEl.classList.remove('dispute');
+                                    d.cardEl.classList.add('win');
+                                    const v = d.cardEl.querySelector('.verdict-pill');
+                                    v.className = 'verdict-pill win';
+                                    v.textContent = 'WON ✓';
+                                }
+                                recovered += d.amount;
+                                won++;
+                                r.recovered += d.amount;
+                                addLogEntry(d, 'win');
+                            }
+                        }, 4000 + Math.random() * 4000);
+                    } else {
+                        d.cardEl.classList.add('accept');
+                        verdictPill.className = 'verdict-pill accept';
+                        verdictPill.textContent = 'Accept';
+                        addLogEntry(d, 'accept');
+                    }
+                }
+
+                // Remove old cards
+                if (d.age > 14 && d.cardEl && d.cardEl.parentNode) {
+                    d.cardEl.style.transition = 'opacity 0.4s';
+                    d.cardEl.style.opacity = '0';
+                    setTimeout(() => d.cardEl && d.cardEl.remove(), 400);
+                    pendingDeductions[i] = null;
+                }
+            });
+
+            pendingDeductions = pendingDeductions.filter(d => d !== null);
+            inQueue = pendingDeductions.filter(d => !d.disputeApplied).length;
+
+            updateStats();
+        }
+
+        function addDeduction() {
+            const stream = document.getElementById('inboxStream');
+            const retailer = retailers[Math.floor(Math.random() * retailers.length)];
+            const codeData = deductionCodes[Math.floor(Math.random() * deductionCodes.length)];
+            const brand = brands[Math.floor(Math.random() * brands.length)];
+            const amount = codeData.range[0] + Math.random() * (codeData.range[1] - codeData.range[0]);
+            codeData.count++;
+
+            const card = document.createElement('div');
+            card.className = 'deduction-card';
+            card.innerHTML = `
+                <div class="retailer-badge ${retailer.id}">${retailer.code}</div>
+                <div class="deduction-info">
+                    <div class="deduction-title">${codeData.label} — ${brand.emoji} ${brand.name}</div>
+                    <div class="deduction-meta">
+                        <span class="deduction-code">${codeData.code}</span>
+                        <span>${codeData.desc}</span>
+                        <span>PO #${Math.floor(Math.random() * 9000000) + 1000000}</span>
+                    </div>
+                </div>
+                <div class="deduction-amount">−$${amount.toFixed(0)}</div>
+                <div class="verdict-pill parsing">Parsing…</div>
+            `;
+
+            stream.insertBefore(card, stream.firstChild);
+
+            // Keep stream tidy
+            while (stream.children.length > 7) {
+                stream.removeChild(stream.lastChild);
+            }
+
+            const ded = {
+                amount,
+                retailer: retailer.id,
+                code: codeData.code,
+                codeData,
+                brand,
+                cardEl: card,
+                age: 0
+            };
+            pendingDeductions.push(ded);
+            renderCodes();
+        }
+
+        function addLogEntry(d, status) {
+            const log = document.getElementById('disputeLog');
+            const entry = document.createElement('div');
+
+            const statusMap = {
+                'dispute': { cls: '', icon: '⚖️', label: 'Dispute Drafted', amtColor: 'log-amount' },
+                'win': { cls: 'win', icon: '🏆', label: 'Dispute Won', amtColor: 'log-amount' },
+                'accept': { cls: 'accept', icon: '✋', label: 'Valid — Accept', amtColor: 'log-amount' }
+            };
+            const s = statusMap[status];
+            const r = retailers.find(rt => rt.id === d.retailer);
+
+            entry.className = `log-item ${s.cls}`;
+            entry.innerHTML = `
+                <div class="log-icon">${s.icon}</div>
+                <div class="log-content">
+                    <div class="log-title">${s.label}: ${d.codeData.label}</div>
+                    <div class="log-meta">${r.emoji} ${r.name} • ${d.brand.name} • ${new Date().toTimeString().slice(0, 5)}</div>
+                </div>
+                <div class="log-amount">$${d.amount.toFixed(0)}</div>
+            `;
+            log.insertBefore(entry, log.firstChild);
+            logEntries.unshift(entry);
+
+            if (logEntries.length > 18) {
+                logEntries.pop().remove();
+            }
+            document.getElementById('logCount').textContent = `${Math.min(logEntries.length, 18)} events`;
+        }
+
+        function updateStats() {
+            document.getElementById('disputedValue').textContent = '$' + Math.round(disputed).toLocaleString();
+            document.getElementById('recoveredValue').textContent = '$' + Math.round(recovered).toLocaleString();
+            document.getElementById('queueValue').textContent = inQueue;
+
+            const winRate = submitted > 0 ? (won / submitted) * 100 : 0;
+            document.getElementById('winrateValue').textContent = submitted > 0 ? winRate.toFixed(0) + '%' : '—';
+
+            updateMeter(winRate);
+
+            // Update retailer bars (relative to overall max)
+            const maxDisputed = Math.max(...retailers.map(r => r.disputed), 1);
+            retailers.forEach(r => {
+                document.getElementById('bar-' + r.id + '-d').style.width = (r.disputed / maxDisputed * 100) + '%';
+                document.getElementById('bar-' + r.id + '-r').style.width = (r.recovered / maxDisputed * 100) + '%';
+                document.getElementById('amt-' + r.id).innerHTML =
+                    `$${Math.round(r.disputed).toLocaleString()} / <strong>$${Math.round(r.recovered).toLocaleString()}</strong>`;
+            });
+        }
+
+        function updateMeter(rate) {
+            const angle = (rate / 100) * 180;
+            document.getElementById('meterFill').style.clipPath =
+                `polygon(0 100%, 0 0, ${50 + angle/3.6}% 0, 50% 100%)`;
+            document.getElementById('meterValue').textContent = rate > 0 ? rate.toFixed(0) + '%' : '—';
+        }
+
+        function resetDefense() {
+            stopDefense();
+            disputed = recovered = submitted = won = inQueue = 0;
+            logEntries = [];
+            pendingDeductions = [];
+            retailers.forEach(r => { r.disputed = 0; r.recovered = 0; });
+            deductionCodes.forEach(c => c.count = 0);
+
+            document.getElementById('disputedValue').textContent = '$0';
+            document.getElementById('recoveredValue').textContent = '$0';
+            document.getElementById('winrateValue').textContent = '—';
+            document.getElementById('queueValue').textContent = '0';
+            document.getElementById('meterValue').textContent = '—';
+            document.getElementById('meterFill').style.clipPath = 'polygon(0 100%, 0 0, 50% 0, 50% 100%)';
+            document.getElementById('logCount').textContent = '0 events';
+
+            retailers.forEach(r => {
+                document.getElementById('bar-' + r.id + '-d').style.width = '0%';
+                document.getElementById('bar-' + r.id + '-r').style.width = '0%';
+                document.getElementById('amt-' + r.id).innerHTML = '$0 / <strong>$0</strong>';
+            });
+
+            document.getElementById('inboxStream').innerHTML = `
+                <div style="text-align: center; padding: 5rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
+                    Press <strong style="color: var(--accent)">Start</strong> to begin defending against retail chargebacks
+                </div>
+            `;
+            document.getElementById('disputeLog').innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1.5rem;">
+                    Start defense to see activity
+                </div>
+            `;
+            renderCodes();
+            showToast('🔄 Reset Complete', 'Defense pipeline cleared');
+        }
+
+        function exportDisputes() {
+            showToast('📤 Disputes Exported', `${submitted} dispute packages ready`);
+        }
+
+        function injectChargeback() {
+            if (!isRunning) {
+                showToast('⚠️ Not Running', 'Start defense first');
+                return;
+            }
+            // Inject a big-ticket post-audit deduction
+            const stream = document.getElementById('inboxStream');
+            const retailer = retailers[Math.floor(Math.random() * retailers.length)];
+            const codeData = deductionCodes[6]; // POST-AUDIT
+            const brand = brands[Math.floor(Math.random() * brands.length)];
+            const amount = 4500 + Math.random() * 8000;
+            codeData.count++;
+
+            const card = document.createElement('div');
+            card.className = 'deduction-card';
+            card.style.borderLeftColor = 'var(--danger)';
+            card.style.boxShadow = '0 0 0 1px var(--danger)';
+            card.innerHTML = `
+                <div class="retailer-badge ${retailer.id}">${retailer.code}</div>
+                <div class="deduction-info">
+                    <div class="deduction-title">🚨 ${codeData.label} — ${brand.emoji} ${brand.name}</div>
+                    <div class="deduction-meta">
+                        <span class="deduction-code">${codeData.code}</span>
+                        <span>Test injection — high-value reclaim</span>
+                        <span>PO #${Math.floor(Math.random() * 9000000) + 1000000}</span>
+                    </div>
+                </div>
+                <div class="deduction-amount">−$${amount.toFixed(0)}</div>
+                <div class="verdict-pill parsing">Parsing…</div>
+            `;
+            stream.insertBefore(card, stream.firstChild);
+            while (stream.children.length > 7) stream.removeChild(stream.lastChild);
+
+            pendingDeductions.push({ amount, retailer: retailer.id, code: codeData.code, codeData, brand, cardEl: card, age: 0 });
+            renderCodes();
+
+            showToast('🚨 Big-Ticket Chargeback', `$${Math.round(amount).toLocaleString()} from ${retailer.name}`);
+        }
+
+        function showToast(title, message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
